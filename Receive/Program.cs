@@ -27,6 +27,7 @@ namespace Receive
                     {
                         var body = ea.Body;
                         var message = Encoding.UTF8.GetString(body.ToArray());
+                        Console.WriteLine(DateTime.Now.ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz"));
                         Console.WriteLine(" [x] Received {0}", message);
                     };
                     channel.BasicConsume(

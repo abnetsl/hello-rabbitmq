@@ -25,10 +25,15 @@ namespace Send
 
                     var body = Encoding.UTF8.GetBytes(message);
 
+                    Console.WriteLine(DateTime.Now.ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz"));
+
+                    var properties = channel.CreateBasicProperties();
+                    properties.Persistent = false;
+
                     channel.BasicPublish(
                         exchange: "",
                         routingKey: "hello",
-                        basicProperties: null,
+                        basicProperties: properties,
                         body: body);
 
                     Console.WriteLine(" [x] Send {0}", message);
