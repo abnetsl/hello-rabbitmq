@@ -1,80 +1,27 @@
 ﻿using System;
 using System.Text;
-using System.Threading.Tasks;
-using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
+using System.Text.Json;
+using Receive;
 
-namespace Receive
-{
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            var factory = new ConnectionFactory() { HostName = "localhost", DispatchConsumersAsync = true };
-            var randomGenerator = new Random();
+var rabbitMQBenchmark = new RabbitMQBenchmark();
+Console.WriteLine("=======Cenário 1=======");
+var scenario1Result = await rabbitMQBenchmark.Run(singleChannel: true, prefetchCount: 0, autoAck: false);
+Console.WriteLine(JsonSerializer.Serialize(scenario1Result));
 
-            using (var connection = factory.CreateConnection())
-            {
-                using (var channel = connection.CreateModel())
-                {
-                    channel.QueueDeclare(
-                        queue: "hello",
-                        durable: false,
-                        exclusive: false,
-                        autoDelete: false,
-                        arguments: null);
+Console.WriteLine("=======Cenário 2=======");
+var scenario2Result = await rabbitMQBenchmark.Run(singleChannel: false, prefetchCount: 0, autoAck: false);
+Console.WriteLine(JsonSerializer.Serialize(scenario2Result));
 
-                    int consumer1Count = 0;
-                    int consumer2Count = 0;
+Console.WriteLine("=======Cenário 3=======");
+var scenario3Result = await rabbitMQBenchmark.Run(singleChannel: true, prefetchCount: 1, autoAck: false);
+Console.WriteLine(JsonSerializer.Serialize(scenario3Result));
 
-                    var consumer = new AsyncEventingBasicConsumer(channel);
-                    consumer.Received += async (model, ea) =>
-                    {
-                        var body = ea.Body;
-                        var message = Encoding.UTF8.GetString(body.ToArray());
-                        Console.WriteLine(" [x] Consumer 1 - Started {0}", message);
-                        await Task.Delay(5000);
-                        consumer1Count++;
-                        Console.WriteLine(" [x] Consumer 1 - Finished {0}", message);
-                        Console.WriteLine($"Consumer 1: {consumer1Count}");
-                    };
-                    channel.BasicQos(0, 10, true);
-                    channel.BasicConsume(
-                        queue: "hello",
-                        autoAck: true,
-                        consumer: consumer);
+Console.WriteLine("=======Cenário 4=======");
+var scenario4Result = await rabbitMQBenchmark.Run(singleChannel: false, prefetchCount: 1, autoAck: false);
+Console.WriteLine(JsonSerializer.Serialize(scenario4Result));
 
-                    using (var channel2 = connection.CreateModel())
-                    {
-                        var consumer2 = new AsyncEventingBasicConsumer(channel2);
-                        consumer2.Received += async (model, ea) =>
-                        {
-                            var body = ea.Body;
-                            var message = Encoding.UTF8.GetString(body.ToArray());
-                            Console.WriteLine(" [x] Consumer 2 - Started {0}", message);
-                            Console.WriteLine(" [x] Consumer 2 - Finished {0}", message);
-                            consumer2Count++;
-                            Console.WriteLine($"Consumer 2: {consumer2Count}");
-                        };
-                        channel2.BasicConsume(
-                            queue: "hello",
-                            autoAck: true,
-                            consumer: consumer2);
+Console.WriteLine("=======Cenário 5=======");
+var scenario5Result = await rabbitMQBenchmark.Run(singleChannel: false, prefetchCount: 1, autoAck: true);
+Console.WriteLine(JsonSerializer.Serialize(scenario5Result));
 
-
-
-                        int i = 0;
-                        while (i < 100)
-                        {
-                            channel.BasicPublish(exchange: "", routingKey: "hello", channel.CreateBasicProperties(), Encoding.UTF8.GetBytes(i.ToString()));
-                            i++;
-                            Console.WriteLine("Published " + i.ToString());
-                        }
-
-                        Console.ReadLine();
-                    }
-                }
-            }
-        }
-    }
-}
+Console.ReadLine();
